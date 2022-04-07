@@ -45,7 +45,7 @@ async def start(event):
         return await event.respond('No contacts added')
         
     IS_RUNNING = True
-    await event.respond(f'Monitoring has been started {IS_RUNNING}:{len(contacts)}')
+    await event.respond(f'Monitoring has been started')
 
     while IS_RUNNING and len(contacts) > 0:
         for contact in contacts:
@@ -58,7 +58,7 @@ async def start(event):
                 await event.respond(f'Status changed for {contact.name} \n\nFROM:\n{contact.status} \n\nTO:\n{cInfo.status}')
                 contact.status = cInfo.status
         sleep(0.5)
-    await event.respond(f'Monitoring has been stopped {IS_RUNNING}:{len(contacts)}')
+    await event.respond(f'Monitoring has been stopped')
 
 
 @bot.on(events.NewMessage(pattern='^/addContact'))
@@ -66,8 +66,10 @@ async def add(event):
 
     message = event.message
     person_info = message.message.split()
+    if len(person_info) < 1 :
+        return await event.respond(f'Phonenumber is requerided')
     if len(person_info) < 2 :
-        return await event.respond(f'Phonenumber and Name is requerided {len(person_info)}')
+        return await event.respond(f'Name is requerided')
 
     id = person_info[1]
     name = person_info[2]
