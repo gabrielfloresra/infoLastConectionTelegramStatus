@@ -1,19 +1,18 @@
 from telethon import TelegramClient, events
 from telethon.tl.types import UserStatusEmpty
-from time import mktime, sleep
+from time import sleep
 import telethon.sync
-from threading import Thread
 
+USER_NAME = "tmp/xlucab"
 API_HASH = ""
-API_ID = ""
+APP_ID = ""
 BOT_TOKEN = ""
-USER_NAME = ""
 
-client = TelegramClient(USER_NAME, API_ID, API_HASH)
+client = TelegramClient(USER_NAME, APP_ID, API_HASH)
 
 client.connect()
 client.start()
-bot = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+bot = TelegramClient('tmp/bot', APP_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 contacts = []
 IS_RUNNING = False
@@ -32,6 +31,7 @@ class Contact:
 
 @bot.on(events.NewMessage(pattern='^/stopMonitoring$'))
 async def stop(event):
+    global IS_RUNNING
     IS_RUNNING = False
     await event.respond('Monitoring has been stopped')
 
@@ -73,13 +73,13 @@ async def add(event):
 
     id = person_info[1]
     name = person_info[2]
-
+    contact = Contact(id, name)
+    
     try:
-        cInfo = await client.get_entity(int(contact.id))
+        _ = await client.get_entity(int(contact.id))
     except:
         return await event.respond(f'{contact.name} is not your contact')
 
-    contact = Contact(id, name)
     contacts.append(contact)
 
     await event.respond(f'{str(contact)}, has been added')
