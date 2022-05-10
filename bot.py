@@ -52,30 +52,13 @@ async def start(event):
             contacts.append(contact)
         finally:
             contact = None
-        contact = Contact('1774983671', 'blanca')
-        try:
-            cInfo = await client.get_entity(int(contact.id))
-            contacts.append(contact)
-        finally:
-            contact = None
-        contact = Contact('1996192868', 'gabriel')
-        try:
-            cInfo = await client.get_entity(int(contact.id))
-            contacts.append(contact)
-        finally:
-            contact = None
 
     IS_RUNNING = True
     await bot.send_message(event.chat, 'starting...', buttons=[
         [
             Button.text('/start'),
             Button.text('/stop'),
-            Button.text('/')
-        ],
-        [
-            Button.text('/'),
-            Button.text('/'),
-            Button.text('/')
+            Button.text('/list')
         ],
         [
             Button.text('/'),
@@ -104,23 +87,22 @@ async def start(event):
                 await event.respond(f'{contact.name} is not your contact')
                 continue
             if contact.status != cInfo.status:
+                responseTxt = ""
                 if isinstance(cInfo.status, UserStatusOnline):
-                    await event.respond(f'{contact.name} is online')
-                    contact.status = cInfo.status
+                    responseTxt = f'{contact.name} is online'
                 elif isinstance(cInfo.status, UserStatusOffline):
-                    await event.respond(f'{contact.name} is offline')
-                    contact.status = cInfo.status
+                    responseTxt = f'{contact.name} is offline'
                 elif isinstance(cInfo.status, UserStatusRecently):
-                    await event.respond(f'{contact.name} is online recently')
-                    contact.status = cInfo.status
+                    responseTxt = f'{contact.name} is online recently'
                 elif isinstance(cInfo.status, UserStatusLastWeek):
-                    await event.respond(f'{contact.name} is online last week')
-                    contact.status = cInfo.status
+                    responseTxt = f'{contact.name} is online last week'
                 elif isinstance(cInfo.status, UserStatusLastMonth):
-                    await event.respond(f'{contact.name} is online last month')
-                    contact.status = cInfo.status
+                    responseTxt = f'{contact.name} is online last month'
                 else:
-                    await event.respond(f'{contact.name} not has status')
+                    responseTxt = f'{contact.name} not has status'
+                
+                await event.respond(responseTxt)
+                contact.status = cInfo.status
         sleep(0.5)
     return
 
