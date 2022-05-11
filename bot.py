@@ -13,29 +13,19 @@ client.connect()
 client.start()
 bot = TelegramClient('bot', APP_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
-contacts = []
+contacts = {}
 IS_RUNNING = False
-
-
-class Contact:
-    status = UserStatusEmpty
-    id = ''
-    name = ''
-
-    def __init__(self, id, name):
-        self.id = id
-        self.name = name
-        self.status = UserStatusEmpty
-
-    def __str__(self):
-        return f'{self.name} ({self.id})'
 
 
 @bot.on(events.NewMessage(pattern='^/stop$'))
 async def stop(event):
     global IS_RUNNING
+
+    if not IS_RUNNING:
+        return await event.respond('Monitoring is already stopped')
+
     IS_RUNNING = False
-    await event.respond('Monitoring has been stopped')
+    return await event.respond('Monitoring has been stopped')
 
 
 @bot.on(events.NewMessage(pattern='^/start$'))
@@ -46,19 +36,20 @@ async def start(event):
         return await event.respond('Monitoring is already started')
 
     if(len(contacts) < 1):
-        contact = Contact('1528080160', 'b')
         try:
-            cInfo = await client.get_entity(int(contact.id))
-            contacts.append(contact)
-        finally:
-            contact = None
+            # idContact = 1528080160
+            idContact = 1996192868
+            cInfo = await client.get_entity(idContact)
+            contacts[idContact] = {"name": "b", "status": UserStatusEmpty}
+        except:
+            return await event.respond('1528080160 not added')
 
     IS_RUNNING = True
     await bot.send_message(event.chat, 'starting...', buttons=[
         [
             Button.text('/start'),
             Button.text('/stop'),
-            Button.text('/list')
+            Button.text('/list'),
         ],
         [
             Button.text('/'),
@@ -80,30 +71,36 @@ async def start(event):
     await event.respond(f'Monitoring has been started')
 
     while IS_RUNNING and len(contacts) > 0:
-        for contact in contacts:
+        for idContact in contacts:
             try:
-                cInfo = await client.get_entity(int(contact.id))
+                cInfo = await client.get_entity(idContact)
             except:
-                await event.respond(f'{contact.name} is not your contact')
+                await event.respond(f'{idContact} is not your contact')
+                del contacts[idContact]
                 continue
-            if contact.status != cInfo.status:
+            if contacts[idContact]["status"] != cInfo.status:
                 responseTxt = ""
                 if isinstance(cInfo.status, UserStatusOnline):
-                    responseTxt = f'{contact.name} is online'
+                    responseTxt = f'{contacts[idContact]["name"]} is online'
                 elif isinstance(cInfo.status, UserStatusOffline):
-                    responseTxt = f'{contact.name} is offline'
+                    responseTxt = f'{contacts[idContact]["name"]} is offline'
                 elif isinstance(cInfo.status, UserStatusRecently):
-                    responseTxt = f'{contact.name} is online recently'
+                    responseTxt = f'{contacts[idContact]["name"]} is online recently'
                 elif isinstance(cInfo.status, UserStatusLastWeek):
-                    responseTxt = f'{contact.name} is online last week'
+                    responseTxt = f'{contacts[idContact]["name"]} is online last week'
                 elif isinstance(cInfo.status, UserStatusLastMonth):
-                    responseTxt = f'{contact.name} is online last month'
+                    responseTxt = f'{contacts[idContact]["name"]} is online last month'
                 else:
-                    responseTxt = f'{contact.name} not has status'
-                
+                    responseTxt = f'{contacts[idContact]["name"]} not has status'
+
                 await event.respond(responseTxt)
-                contact.status = cInfo.status
+                contacts[idContact]["status"] = cInfo.status
         sleep(0.5)
+
+    if len(contacts) == 0:
+        await event.respond('sin contactos')
+
+    IS_RUNNING = False
     return
 
 
@@ -114,36 +111,33 @@ async def add(event):
     person_info = message.message.split()
     if len(person_info) < 1:
         return await event.respond(f'Phonenumber is required')
+    if int(person_info[1]) == 0:
+        return await event.respond(f'Phonenumber is incorrect')
     if len(person_info) < 2:
         return await event.respond(f'Name is required')
 
-    id = person_info[1]
+    id = int(person_info[1])
     name = person_info[2]
-    contact = Contact(id, name)
 
     try:
-        _ = await client.get_entity(int(contact.id))
+        _ = await client.get_entity(id)
     except:
-        return await event.respond(f'{contact.name} is not your contact')
+        return await event.respond(f'{name} is not your contact')
 
-    contacts.append(contact)
+    contacts[id] = {"name": name, "status": UserStatusEmpty}
 
-    return await event.respond(f'{str(contact)}, has been added')
+    return await event.respond(f'{str(contacts[id])} has been added')
 
 
 @bot.on(events.NewMessage(pattern='^/rm'))
 async def remove(event):
     message = event.message
     person_info = message.message.split()
-    id = person_info[1]
+    id = int(person_info[1])
     name = person_info[2]
 
-    contact = Contact(id, name)
-    try:
-        contacts.remove(contact)
-        await event.respond(f'User {str(contact)}, has been deleted')
-    except:
-        await event.respond("not found contact")
+    await event.respond(f'User {str(contacts[id])}, has been deleted')
+    del contacts[id]
 
 
 @bot.on(events.NewMessage(pattern='/list'))
